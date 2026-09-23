@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f8f9fa; direction: rtl; }
+      .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+      video { width: 100%; max-width: 100%; border-radius: 8px; background-color: #000; }
+      button { margin-top: 15px; padding: 12px 24px; font-size: 16px; font-weight: bold; color: white; background-color: #1a73e8; border: none; border-radius: 6px; cursor: pointer; }
+      button:disabled { background-color: #ccc; }
+      #status { margin-top: 15px; font-size: 14px; color: #333; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>📷 צילום תמונה</h2>
+      <video id="camera" autoplay playsinline></video>
+      <br>
+      <button id="captureBtn" onclick="takePhoto()">צלם ושמור תמונה</button>
+      <div id="status"></div>
+      <canvas id="canvas" style="display:none;"></canvas>
+    </div>
+
+    <script>
+      const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzdiQCNLdj5DOd1QWQ170WrfJUyM1IrXa71wKxzFAIYVIEMKCIrwhXTvBnyoJ6ZVUos/exec";
+
+      async function startCamera() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+          document.getElementById("camera").srcObject = stream;
+        } catch (error) {
+          document.getElementById("status").textContent = "לא ניתן לגשת למצלמה: " + error.message;
+        }
+      }
+
+      function takePhoto() {
+        const video = document.getElementById("camera");
+        const canvas = document.getElementById("canvas");
+
+        if (!video.videoWidth) {
+          document.getElementById("status").textContent = "המצלמה טרם נטענה";
+          return;
+        }
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/png");
+
+        document.getElementById("status").textContent = "שולח לשמירה בדרייב שלך...";
+        submitToAppsScript(dataUrl);
+      }
+
+      function submitToAppsScript(dataUrl) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = WEB_APP_URL;
+        form.target = '_self';
+
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'dataUrl';
+        input.value = dataUrl;
+        form.appendChild(input);
+
+        document.body.appendChild(form);
+        form.submit();
+      }
+
+      startCamera();
+    </script>
+  </body>
+</html>
